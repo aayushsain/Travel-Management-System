@@ -1,8 +1,4 @@
-/*
-* 	Owl Carousel Owl Demo Theme 
-*	v1.24
-*/
-    #owl-demo .item,#owl-demo1 .item{
+ #owl-demo .item,#owl-demo1 .item{
         margin: 3px;
     }
     #owl-demo .item img{
