@@ -1,0 +1,5 @@
+[deploy]
+# Runs before each deployment to ensure the MySQL schema and seed data are
+# present. Uses CREATE TABLE IF NOT EXISTS / CREATE DATABASE IF NOT EXISTS so
+# the script is idempotent and safe to re-run on every deploy.
+preDeployCommand = "bash setup-db.sh"
