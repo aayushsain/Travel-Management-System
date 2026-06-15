@@ -1,5 +1,4 @@
 # VoyageQuest Version Control Exclusions
-config.php
 scratch/
 *.log
 .DS_Store
