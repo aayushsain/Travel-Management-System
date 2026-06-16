@@ -698,6 +698,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && (isset($_POST["sbmt"]) || isset($_P
                 padding: 3rem 2rem;
             }
         }
+<?php if (isset($_GET['screenshot'])): ?>
+* {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+<?php endif; ?>
     </style>
 </head>
 <body>

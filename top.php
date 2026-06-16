@@ -72,11 +72,24 @@ body::before {
     pointer-events: none;
 }
 body > * { position: relative; z-index: 1; }
+<?php if (isset($_GET['screenshot'])): ?>
+* {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+body::before {
+    background: rgba(0, 0, 0, 0.15) !important;
+}
+<?php endif; ?>
 </style>
 <script>
 (function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeParam = urlParams.get('theme');
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
+    if (themeParam === 'light' || (themeParam !== 'dark' && savedTheme === 'light')) {
         document.documentElement.setAttribute('data-theme', 'light');
     } else {
         document.documentElement.removeAttribute('data-theme');
