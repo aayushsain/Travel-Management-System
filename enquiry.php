@@ -6,6 +6,7 @@ include('function.php');
 $pid = isset($_GET["pid"]) ? (int)$_GET["pid"] : 0;
 
 $server_error = null;
+$error_field = null;
 $booking_success = false;
 
 if (isset($_POST["sbmt"])) {
@@ -26,20 +27,28 @@ if (isset($_POST["sbmt"])) {
     $pkg_check = prepare_query($cn, "SELECT Packid FROM package WHERE Packid = ?", "i", [$safe_pid]);
     if (!$pkg_check || mysqli_num_rows($pkg_check) === 0) {
         $server_error = "Invalid travel package selected. Please select a valid package.";
+        $error_field = "pid";
     } elseif ($name === '' || !preg_match('/^[a-zA-Z ]{3,50}$/', $name)) {
         $server_error = "Please enter a valid name (3-50 letters and spaces only).";
+        $error_field = "t1";
     } elseif ($mobile === '' || !preg_match('/^[0-9]{10,12}$/', $mobile)) {
         $server_error = "Please enter a valid 10-12 digit mobile number.";
+        $error_field = "t2";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $server_error = "Please enter a valid email address.";
+        $error_field = "t3";
     } elseif ($days_raw === '' || !is_numeric($days_raw) || (int)$days_raw < 1 || (int)$days_raw > 365) {
         $server_error = "Number of Days must be a number between 1 and 365.";
+        $error_field = "t4";
     } elseif ($adults_raw === '' || !is_numeric($adults_raw) || (int)$adults_raw < 1 || (int)$adults_raw > 20) {
         $server_error = "Number of Adults must be a number between 1 and 20.";
+        $error_field = "t6";
     } elseif ($children_raw !== '' && (!is_numeric($children_raw) || (int)$children_raw < 0 || (int)$children_raw > 20)) {
         $server_error = "Number of Children must be a number between 0 and 20.";
+        $error_field = "t5";
     } elseif (strlen($message) < 10) {
         $server_error = "Please enter a detailed message (at least 10 characters).";
+        $error_field = "t7";
     } else {
         $days = (int)$days_raw;
         $children = $children_raw !== '' ? (int)$children_raw : 0;
@@ -49,7 +58,7 @@ if (isset($_POST["sbmt"])) {
         $ok = prepare_exec($cn,
             "INSERT INTO enquiry(Packageid,Name,Gender,Mobileno,Email,NoofDays,Child,Adults,Message,Statusfield)
              VALUES(?,?,?,?,?,?,?,?,?,'Pending')",
-            "issssiiss",
+             "issssiiss",
             [$safe_pid, $name, $gender, $mobile, $email, $days, $children, $adults, $message]
         );
         
@@ -83,13 +92,15 @@ if ($booking_success) {
 }
 
 if ($server_error) {
-    echo "
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        showCustomAlert('Validation Error', '" . addslashes($server_error) . "', true);
-    });
-    </script>
-    ";
+    if ($error_field && $error_field !== 'pid') {
+        echo "
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            showInlineError('" . addslashes($error_field) . "', '" . addslashes($server_error) . "');
+        });
+        </script>
+        ";
+    }
 }
 
 // Fetch package details using prepared statement
@@ -185,13 +196,16 @@ $cat_result = mysqli_query($cn, "SELECT Cat_id, Cat_name FROM category ORDER BY 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t1">Full Name *</label>
-                                <input class="ta-form-control" id="t1" name="t1" type="text" 
-                                       required minlength="3" maxlength="50" 
-                                       pattern="[a-zA-Z ]{3,50}"
-                                       title="Please enter 3-50 characters (letters and spaces only)"
-                                       placeholder="First and last name"
-                                       autocomplete="name"
-                                       value="<?php echo isset($_POST['t1']) ? h($_POST['t1']) : ''; ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t1" name="t1" type="text" 
+                                           required minlength="3" maxlength="50" 
+                                           pattern="[a-zA-Z ]{3,50}"
+                                           title="Please enter 3-50 characters (letters and spaces only)"
+                                           placeholder="First and last name"
+                                           autocomplete="name"
+                                           value="<?php echo isset($_POST['t1']) ? h($_POST['t1']) : ''; ?>">
+                                    <div class="error-feedback" id="err-t1"></div>
+                                </div>
                             </div>
                             <div class="ta-form-group">
                                 <label class="ta-form-label">Gender *</label>
@@ -219,19 +233,25 @@ $cat_result = mysqli_query($cn, "SELECT Cat_id, Cat_name FROM category ORDER BY 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t2">Mobile Number *</label>
-                                <input class="ta-form-control" id="t2" name="t2" type="tel" 
-                                       required pattern="[0-9]{10,12}" 
-                                       title="Please enter 10-12 digit mobile number"
-                                       placeholder="e.g. 9876543210"
-                                       autocomplete="tel"
-                                       value="<?php echo isset($_POST['t2']) ? h($_POST['t2']) : ''; ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t2" name="t2" type="tel" 
+                                           required pattern="[0-9]{10,12}" 
+                                           title="Please enter 10-12 digit mobile number"
+                                           placeholder="e.g. 9876543210"
+                                           autocomplete="tel"
+                                           value="<?php echo isset($_POST['t2']) ? h($_POST['t2']) : ''; ?>">
+                                    <div class="error-feedback" id="err-t2"></div>
+                                </div>
                             </div>
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t3">Email Address *</label>
-                                <input class="ta-form-control" id="t3" name="t3" type="email" 
-                                       required placeholder="name@domain.com"
-                                       autocomplete="email"
-                                       value="<?php echo isset($_POST['t3']) ? h($_POST['t3']) : ''; ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t3" name="t3" type="email" 
+                                           required placeholder="name@domain.com"
+                                           autocomplete="email"
+                                           value="<?php echo isset($_POST['t3']) ? h($_POST['t3']) : ''; ?>">
+                                    <div class="error-feedback" id="err-t3"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -245,24 +265,33 @@ $cat_result = mysqli_query($cn, "SELECT Cat_id, Cat_name FROM category ORDER BY 
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;" class="travel-details-grid">
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t4">Number of Days *</label>
-                                <input class="ta-form-control" id="t4" name="t4" type="number" 
-                                       min="1" max="365" required placeholder="5"
-                                       style="text-align: center;"
-                                       value="<?php echo isset($_POST['t4']) ? h($_POST['t4']) : ($package_data ? h($package_data['NoofDays'] ?? '5') : '5'); ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t4" name="t4" type="number" 
+                                           min="1" max="365" required placeholder="5"
+                                           style="text-align: center;"
+                                           value="<?php echo isset($_POST['t4']) ? h($_POST['t4']) : ($package_data ? h($package_data['NoofDays'] ?? '5') : '5'); ?>">
+                                    <div class="error-feedback" id="err-t4"></div>
+                                </div>
                             </div>
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t5">Number of Children</label>
-                                <input class="ta-form-control" id="t5" name="t5" type="number" 
-                                       min="0" max="20" placeholder="0"
-                                       style="text-align: center;"
-                                       value="<?php echo isset($_POST['t5']) ? h($_POST['t5']) : '0'; ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t5" name="t5" type="number" 
+                                           min="0" max="20" placeholder="0"
+                                           style="text-align: center;"
+                                           value="<?php echo isset($_POST['t5']) ? h($_POST['t5']) : '0'; ?>">
+                                    <div class="error-feedback" id="err-t5"></div>
+                                </div>
                             </div>
                             <div class="ta-form-group">
                                 <label class="ta-form-label" for="t6">Number of Adults *</label>
-                                <input class="ta-form-control" id="t6" name="t6" type="number" 
-                                       min="1" max="20" required placeholder="1"
-                                       style="text-align: center;"
-                                       value="<?php echo isset($_POST['t6']) ? h($_POST['t6']) : '1'; ?>">
+                                <div class="input-wrapper">
+                                    <input class="ta-form-control" id="t6" name="t6" type="number" 
+                                           min="1" max="20" required placeholder="1"
+                                           style="text-align: center;"
+                                           value="<?php echo isset($_POST['t6']) ? h($_POST['t6']) : '1'; ?>">
+                                    <div class="error-feedback" id="err-t6"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -275,9 +304,12 @@ $cat_result = mysqli_query($cn, "SELECT Cat_id, Cat_name FROM category ORDER BY 
                         </div>
                         <div class="ta-form-group">
                             <label class="ta-form-label" for="t7">Enquiry Message *</label>
-                            <textarea class="ta-form-control" id="t7" name="t7" required
-                                      placeholder="Tell us about your travel preferences: hotel class, dietary needs, special requirements, pickup location..."
-                                      rows="4"><?php echo isset($_POST['t7']) ? h($_POST['t7']) : ''; ?></textarea>
+                            <div class="input-wrapper" style="align-items: flex-start;">
+                                <textarea class="ta-form-control" id="t7" name="t7" required
+                                          placeholder="Tell us about your travel preferences: hotel class, dietary needs, special requirements, pickup location..."
+                                          rows="4"><?php echo isset($_POST['t7']) ? h($_POST['t7']) : ''; ?></textarea>
+                                <div class="error-feedback" id="err-t7" style="margin-top: 0.5rem;"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -329,10 +361,82 @@ $cat_result = mysqli_query($cn, "SELECT Cat_id, Cat_name FROM category ORDER BY 
         grid-template-columns: 1fr !important;
     }
 }
+
+/* Premium Inline Form Validation Styles */
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+    width: 100%;
+}
+
+@media (max-width: 576px) {
+    .input-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.35rem;
+    }
+}
+
+/* For grid columns where space is limited, default to vertical wrapper to prevent squishing */
+.travel-details-grid .input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+}
+
+.error-feedback {
+    color: #ff4d4d;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 0.4rem 0.8rem;
+    background: rgba(255, 77, 77, 0.08);
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    border-radius: 8px;
+}
+
+.error-feedback.visible {
+    display: inline-flex;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.travel-details-grid .input-wrapper .error-feedback {
+    white-space: normal;
+    transform: translateY(-5px);
+}
+
+.travel-details-grid .input-wrapper .error-feedback.visible {
+    transform: translateY(0);
+}
+
+@media (max-width: 576px) {
+    .error-feedback {
+        white-space: normal;
+        transform: translateY(-5px);
+    }
+    .error-feedback.visible {
+        transform: translateY(0);
+    }
+}
+
+.ta-form-control.is-invalid {
+    border-color: #ff4d4d !important;
+    box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.15) !important;
+    background: rgba(255, 77, 77, 0.02) !important;
+}
 </style>
 
 <script>
-// Custom premium glassmorphic alert function
+// Custom premium glassmorphic alert function (used for success only now)
 function showCustomAlert(title, message, isError = false) {
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(3,7,18,0.92);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);display:flex;justify-content:center;align-items:center;z-index:99999;opacity:0;transition:opacity 0.4s ease;';
@@ -400,52 +504,148 @@ function showCustomAlert(title, message, isError = false) {
     }
 }
 
+// Inline validation helpers
+function showInlineError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    const errorEl = document.getElementById('err-' + fieldId);
+    if (errorEl) {
+        errorEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> ` + message;
+        errorEl.classList.add('visible');
+    }
+    field.classList.add('is-invalid');
+}
+
+function clearInlineError(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    const errorEl = document.getElementById('err-' + fieldId);
+    if (errorEl) {
+        errorEl.classList.remove('visible');
+        // Clear message after animation finishes to prevent content pop
+        setTimeout(() => {
+            if (!errorEl.classList.contains('visible')) {
+                errorEl.innerHTML = '';
+            }
+        }, 350);
+    }
+    field.classList.remove('is-invalid');
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     const form = document.getElementById("bookingForm");
     if (form) {
+        const fields = {
+            t1: {
+                el: document.getElementById("t1"),
+                validate: function(val) {
+                    if (val === "") return "Full Name is required.";
+                    if (!/^[a-zA-Z ]{3,50}$/.test(val)) return "3-50 letters and spaces only.";
+                    return null;
+                }
+            },
+            t2: {
+                el: document.getElementById("t2"),
+                validate: function(val) {
+                    if (val === "") return "Mobile Number is required.";
+                    if (!/^[0-9]{10,12}$/.test(val)) return "10 to 12 digits required.";
+                    return null;
+                }
+            },
+            t3: {
+                el: document.getElementById("t3"),
+                validate: function(val) {
+                    if (val === "") return "Email Address is required.";
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return "Invalid email address.";
+                    return null;
+                }
+            },
+            t4: {
+                el: document.getElementById("t4"),
+                validate: function(val) {
+                    if (val === "") return "Required.";
+                    const num = parseInt(val);
+                    if (isNaN(num) || num < 1 || num > 365) return "Must be 1 - 365 days.";
+                    return null;
+                }
+            },
+            t5: {
+                el: document.getElementById("t5"),
+                validate: function(val) {
+                    if (val === "") return null;
+                    const num = parseInt(val);
+                    if (isNaN(num) || num < 0 || num > 20) return "Must be 0 - 20 children.";
+                    return null;
+                }
+            },
+            t6: {
+                el: document.getElementById("t6"),
+                validate: function(val) {
+                    if (val === "") return "Required.";
+                    const num = parseInt(val);
+                    if (isNaN(num) || num < 1 || num > 20) return "Must be 1 - 20 adults.";
+                    return null;
+                }
+            },
+            t7: {
+                el: document.getElementById("t7"),
+                validate: function(val) {
+                    if (val === "") return "Enquiry Message is required.";
+                    if (val.length < 10) return "At least 10 characters required.";
+                    return null;
+                }
+            }
+        };
+
+        function checkField(fieldId) {
+            const field = fields[fieldId];
+            if (!field || !field.el) return true;
+            const val = field.el.value.trim();
+            const errorMsg = field.validate(val);
+            if (errorMsg) {
+                showInlineError(fieldId, errorMsg);
+                return false;
+            } else {
+                clearInlineError(fieldId);
+                return true;
+            }
+        }
+
+        // Real-time validation on input and blur
+        Object.keys(fields).forEach(fieldId => {
+            const field = fields[fieldId].el;
+            if (field) {
+                field.addEventListener("input", function() {
+                    // Only validate dynamically if user had already failed or has entered text
+                    if (field.classList.contains("is-invalid") || field.value.trim().length > 0) {
+                        checkField(fieldId);
+                    }
+                });
+                field.addEventListener("blur", function() {
+                    checkField(fieldId);
+                });
+            }
+        });
+
         form.addEventListener("submit", function(event) {
-            const name = document.getElementById("t1").value.trim();
-            const mobile = document.getElementById("t2").value.trim();
-            const email = document.getElementById("t3").value.trim();
-            const days = document.getElementById("t4").value.trim();
-            const children = document.getElementById("t5").value.trim();
-            const adults = document.getElementById("t6").value.trim();
-            const message = document.getElementById("t7").value.trim();
-            
-            let errors = [];
-            
-            if (!/^[a-zA-Z ]{3,50}$/.test(name)) {
-                errors.push("Full Name must be between 3 and 50 characters (letters and spaces only).");
-                document.getElementById("t1").focus();
-            }
-            else if (!/^[0-9]{10,12}$/.test(mobile)) {
-                errors.push("Mobile Number must be 10 to 12 digits.");
-                document.getElementById("t2").focus();
-            }
-            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                errors.push("Please enter a valid email address.");
-                document.getElementById("t3").focus();
-            }
-            else if (days === "" || isNaN(days) || parseInt(days) < 1 || parseInt(days) > 365) {
-                errors.push("Number of Days must be a number between 1 and 365.");
-                document.getElementById("t4").focus();
-            }
-            else if (children !== "" && (isNaN(children) || parseInt(children) < 0 || parseInt(children) > 20)) {
-                errors.push("Number of Children must be between 0 and 20.");
-                document.getElementById("t5").focus();
-            }
-            else if (adults === "" || isNaN(adults) || parseInt(adults) < 1 || parseInt(adults) > 20) {
-                errors.push("Number of Adults must be between 1 and 20.");
-                document.getElementById("t6").focus();
-            }
-            else if (message.length < 10) {
-                errors.push("Enquiry Message must be at least 10 characters long.");
-                document.getElementById("t7").focus();
-            }
-            
-            if (errors.length > 0) {
+            let hasErrors = false;
+            let firstInvalidField = null;
+
+            Object.keys(fields).forEach(fieldId => {
+                const isValid = checkField(fieldId);
+                if (!isValid) {
+                    hasErrors = true;
+                    if (!firstInvalidField) {
+                        firstInvalidField = fields[fieldId].el;
+                    }
+                }
+            });
+
+            if (hasErrors) {
                 event.preventDefault();
-                showCustomAlert("Validation Error", errors[0], true);
+                if (firstInvalidField) {
+                    firstInvalidField.focus();
+                }
                 return false;
             }
 
