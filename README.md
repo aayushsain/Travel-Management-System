@@ -26,6 +26,10 @@ Offers an interactive interface showing detailed package plans, high-resolution 
 A protected gate for administrators to access back-office dashboard panels.
 ![Admin Login](./screenshots/admin_login.png)
 
+### 6. About Us Page
+An elegant summary highlighting the company's vision and value propositions in travel.
+![About Us](./screenshots/aboutus.png)
+
 ---
 
 ## 🌟 Features
