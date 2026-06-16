@@ -699,11 +699,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && (isset($_POST["sbmt"]) || isset($_P
             }
         }
 <?php if (isset($_GET['screenshot'])): ?>
-* {
-    animation: none !important;
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none !important;
+.noise-overlay {
+    display: none !important;
 }
 <?php endif; ?>
     </style>
@@ -954,6 +951,10 @@ if (form && submitBtn) {
 
 // Staggered entrance animations via GSAP
 document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('screenshot') === '1') {
+        return; // Bypass GSAP animations for screenshots to avoid opacity=0
+    }
     if (typeof gsap !== 'undefined') {
         gsap.from(".auth-logo-header", { duration: 1, y: -20, opacity: 0, ease: "power4.out" });
         gsap.from(".auth-title-section", { duration: 1, y: 20, opacity: 0, delay: 0.2, ease: "power4.out" });

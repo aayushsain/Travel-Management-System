@@ -281,3 +281,16 @@ body {
     .luxury-container { padding: 4rem 1.5rem; }
     .luxury-hero { padding: 0 5%; }
 }
+
+[data-theme="light"] .luxury-hero .luxury-title {
+    color: #ffffff !important;
+}
+[data-theme="light"] .luxury-hero .luxury-tagline {
+    color: #e2e8f0 !important;
+}
+[data-theme="light"] .luxury-hero .meta-label {
+    color: #e2e8f0 !important;
+}
+[data-theme="light"] .luxury-hero .meta-value {
+    color: var(--luxury-accent) !important;
+}
