@@ -1,0 +1,8 @@
+{
+  "name": "voyagequest/travel-management-system",
+  "description": "VoyageQuest Premium Travel Management System",
+  "require": {
+    "php": ">=8.0",
+    "ext-mysqli": "*"
+  }
+}
